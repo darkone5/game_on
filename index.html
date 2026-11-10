@@ -295,7 +295,7 @@
       }
     }
 
-    // Player class (Spawns in center: width/2 - size/2, height/2 - size/2)
+    // Player class
     class Player {
       constructor() {
         this.size = 26;
@@ -412,7 +412,7 @@
       document.getElementById('level-display').innerText = currentLevel;
       player.resetPos();
 
-      // Static obstacles (ensuring center spawn zone is clear)
+      // Static obstacles
       staticObstacles = [];
       const obstacleCount = 3 + lvl * 2;
       const shapes = ['rect', 'circle', 'triangle'];
@@ -426,7 +426,6 @@
           obsX = Math.random() * (canvas.width - 150) + 75;
           obsY = Math.random() * (canvas.height - 150) + 50;
 
-          // Keep center spawn clear of immediate obstacles
           const centerBuffer = (obsX < player.startX + 60 && obsX + obsSize > player.startX - 60 && 
                                 obsY < player.startY + 60 && obsY + obsSize > player.startY - 60);
 
@@ -443,7 +442,7 @@
         });
       }
 
-      // Generate varied treasures with level-dependent coin gating
+      // Generate treasures
       treasures = [];
       const treasureCount = 10 + (lvl - 1) * 10; 
 
@@ -497,7 +496,7 @@
         });
       }
 
-      // Moving Traps
+      // Moving Traps / Enemies
       traps = [];
       if (lvl === 2) {
         for (let i = 0; i < 4; i++) {
@@ -506,17 +505,23 @@
             y: Math.random() * (canvas.height - 80) + 40,
             vx: (Math.random() - 0.5) * 3,
             vy: (Math.random() - 0.5) * 3,
-            size: 20
+            size: 20,
+            type: 'red', // Red enemy (33 dmg/sec)
+            damage: 0.55 // ~33 dmg per second at 60fps
           });
         }
       } else if (lvl === 3) {
+        // Level 3: Mix of Red enemies and Blue enemies (Blue deals 50 dmg/sec)
         for (let i = 0; i < 8; i++) {
+          const isBlue = i % 2 === 0; // Alternate or mix types
           traps.push({
             x: Math.random() * (canvas.width - 80) + 40,
             y: Math.random() * (canvas.height - 80) + 40,
-            vx: (Math.random() - 0.5) * 4.5,
-            vy: (Math.random() - 0.5) * 4.5,
-            size: 22
+            vx: (Math.random() - 0.5) * (isBlue ? 5 : 4.5),
+            vy: (Math.random() - 0.5) * (isBlue ? 5 : 4.5),
+            size: isBlue ? 22 : 20,
+            type: isBlue ? 'blue' : 'red',
+            damage: isBlue ? 0.833 : 0.55 // Blue = 50 dmg/sec, Red = 33 dmg/sec
           });
         }
       }
@@ -568,8 +573,8 @@
         if (trap.y < 0 || trap.y > canvas.height - trap.size) trap.vy *= -1;
 
         if (!player.isProtected && checkCollision(player, {x: trap.x + trap.size/2, y: trap.y + trap.size/2, radius: trap.size/2})) {
-          player.hp -= 2;
-          playSound(130, 0.05);
+          player.hp -= trap.damage;
+          playSound(trap.type === 'blue' ? 160 : 130, 0.04);
           if (player.hp <= 0) handlePlayerDeath();
         }
       });
@@ -651,11 +656,16 @@
         ctx.stroke();
       });
 
-      // Draw traps
+      // Draw traps/enemies (Red = 33 dmg/sec, Blue = 50 dmg/sec)
       traps.forEach(t => {
-        ctx.fillStyle = '#ff3333';
+        if (t.type === 'blue') {
+          ctx.fillStyle = '#0055ff';
+          ctx.strokeStyle = '#0022aa';
+        } else {
+          ctx.fillStyle = '#ff3333';
+          ctx.strokeStyle = '#990000';
+        }
         ctx.fillRect(t.x, t.y, t.size, t.size);
-        ctx.strokeStyle = '#990000';
         ctx.strokeRect(t.x, t.y, t.size, t.size);
       });
 
