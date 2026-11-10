@@ -394,12 +394,12 @@
       document.getElementById('level-display').innerText = currentLevel;
       player.resetPos();
 
-      // Update background and border colors per level (Level 2 colors swapped as requested)
+      // Update background and border colors per level
       if (lvl === 1) {
         canvas.style.backgroundColor = '#5c4033'; // Brown background
         canvas.style.border = '4px solid #2e8b57'; // Green border
       } else if (lvl === 2) {
-        canvas.style.backgroundColor = '#fbc02d'; // Darker yellow background
+        canvas.style.backgroundColor = '#d4ac0d'; // Darker yellow background
         canvas.style.border = '4px solid #ffeb3b'; // Bright yellow border
       } else if (lvl === 3) {
         canvas.style.backgroundColor = '#b3e5fc'; // Baby blue background
@@ -418,11 +418,10 @@
         let valid = false;
 
         do {
-          obsSize = 32; // Fixed sizing for clean emoji sprites
+          obsSize = 32; 
           obsX = Math.random() * (canvas.width - 100) + 50;
           obsY = Math.random() * (canvas.height - 100) + 50;
 
-          // Always protect center spawn zone
           const centerBuffer = (obsX < player.startX + 50 && obsX + obsSize > player.startX - 50 && 
                                 obsY < player.startY + 50 && obsY + obsSize > player.startY - 50);
 
@@ -440,7 +439,7 @@
         });
       }
 
-      // Generate treasures
+      // Generate treasures (solid colors without borders)
       treasures = [];
       const treasureCount = 10 + (lvl - 1) * 10; 
 
@@ -624,21 +623,26 @@
 
       staticObstacles.forEach(obs => {
         let sprite = '🌲'; // Level 1: Tree
-        if (currentLevel === 2) sprite = '🔺'; // Level 2: Pyramid
+        if (currentLevel === 2) sprite = '🟡'; // Level 2: Yellow Pyramid / Marker emoji substitute (or 🔶)
         if (currentLevel === 3) sprite = '🧊'; // Level 3: Ice cube
 
-        ctx.fillText(sprite, obs.x + obs.size/2, obs.y + obs.size/2);
+        // If level 2, override with a bright yellow pyramid/triangle look via text/color or use yellow-toned emoji
+        if (currentLevel === 2) {
+          ctx.fillStyle = '#f1c40f'; // Solid yellow color tinting for Level 2 pyramids
+        } else {
+          ctx.fillStyle = '#ffffff';
+        }
+
+        const displaySprite = (currentLevel === 2) ? '🔺' : sprite;
+        ctx.fillText(displaySprite, obs.x + obs.size/2, obs.y + obs.size/2);
       });
 
-      // Draw treasures
+      // Draw treasures as solid colored circles (no border strokes)
       treasures.forEach(t => {
         ctx.fillStyle = t.color;
         ctx.beginPath();
         ctx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
       });
 
       // Draw traps/enemies
