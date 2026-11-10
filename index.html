@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>1-Player Treasure Hunt</title>
+  <title>Treasure Hunt Game On</title>
   <style>
     body {
       background-color: #1a1a1a;
@@ -50,7 +50,7 @@
       background-color: #5c4033;
       box-shadow: 0 10px 20px rgba(0,0,0,0.5);
     }
-    /* In-Game Menu Overlay */
+    # In-Game Menu Overlay
     .overlay {
       position: absolute;
       top: 0;
@@ -122,7 +122,7 @@
 </head>
 <body>
 
-  <h1>🏴‍☠️ Treasure Hunt - Solo Adventure</h1>
+  <h1>Treasure Hunt</h1>
   
   <div class="hud">
     <div class="player-color">
@@ -137,7 +137,7 @@
   <div class="game-container">
     <canvas id="gameCanvas" width="1000" height="650"></canvas>
     
-    <!-- Modal Menu -->
+    # Modal Menu
     <div id="gameOverlay" class="overlay hidden">
       <div id="overlayTitle" class="overlay-title">Level Cleared!</div>
       <div id="overlayMessage" class="overlay-message">Get ready for the next level.</div>
@@ -156,7 +156,7 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Audio Setup
+    # Audio setup
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function playSound(freq, duration) {
@@ -173,7 +173,7 @@
       osc.stop(audioCtx.currentTime + duration);
     }
 
-    // Input state
+    # Input state
     const keys = {};
     window.addEventListener('keydown', e => {
       keys[e.key] = true;
@@ -193,7 +193,7 @@
     });
     window.addEventListener('keyup', e => keys[e.key] = false);
 
-    // Game state variables
+    # Game state variables
     let currentLevel = 1;
     let treasures = [];
     let traps = [];
@@ -202,7 +202,7 @@
     let isManualPause = false;
     let pendingAction = null;
 
-    // Overlay Management
+    # Overlay Management
     function showOverlay(title, message, buttonsConfig) {
       isPaused = true;
       document.getElementById('overlayTitle').innerText = title;
@@ -263,7 +263,7 @@
       }
     }
 
-    // Player class
+    # Player class
     class Player {
       constructor() {
         this.size = 26;
@@ -362,7 +362,7 @@
       document.getElementById('level-display').innerText = currentLevel;
       player.resetPos();
 
-      // Update background and border colors per level
+      # Update background and border colors per level
       if (lvl === 1) {
         canvas.style.backgroundColor = '#5c4033'; 
         canvas.style.border = '4px solid #2e8b57'; 
@@ -374,7 +374,7 @@
         canvas.style.border = '4px solid #0288d1'; 
       }
 
-      // Static obstacles: Level 1 = 5, Level 2 = 15, Level 3 = 25
+      # Static obstacles: Level 1 = 5, Level 2 = 15, Level 3 = 25
       staticObstacles = [];
       let obstacleCount = 5;
       if (lvl === 2) obstacleCount = 15;
@@ -407,7 +407,7 @@
         });
       }
 
-      // Generate treasures (solid colors)
+      # Generate treasures
       treasures = [];
       const treasureCount = 10 + (lvl - 1) * 10; 
 
@@ -461,7 +461,7 @@
         });
       }
 
-      // Moving Traps / Enemies
+      # Moving Traps / Enemies
       traps = [];
       if (lvl === 2) {
         for (let i = 0; i < 4; i++) {
@@ -505,7 +505,7 @@
       playSound(100, 0.1);
       if (player.lives > 0) {
         showOverlay(
-          `⚠️ You Lost a Life!`, 
+          `You lost a Life!`, 
           `Remaining Lives: ${player.lives}`, 
           [
             { text: "Continue", onClick: () => { player.hp = 100; player.resetPos(); closeOverlay(); } }
@@ -513,8 +513,8 @@
         );
       } else {
         showOverlay(
-          `❌ Game Over!`, 
-          "All 3 lives lost. Resetting game back to Level 1.", 
+          `Game over!`, 
+          "All 3 lives lost. Restarting game back to Level 1.", 
           [
             { text: "Try Again", onClick: () => { player.fullReset(); initLevel(1); closeOverlay(); } }
           ]
@@ -527,7 +527,7 @@
 
       player.update();
 
-      // Moving traps updates
+      # Moving traps
       traps.forEach(trap => {
         trap.x += trap.vx;
         trap.y += trap.vy;
@@ -541,7 +541,7 @@
         }
       });
 
-      // Treasure collection
+      # Treasure collection
       treasures.forEach((t, index) => {
         if (checkCollision(player, t)) {
           player.score += t.points;
@@ -550,11 +550,11 @@
         }
       });
 
-      // Level progression
+      # Level progression
       if (treasures.length === 0) {
         if (currentLevel < 3) {
           showOverlay(
-            `🏆 Level ${currentLevel} Cleared!`, 
+            `Level ${currentLevel} Cleared!`, 
             `Advancing to Level ${currentLevel + 1}...`, 
             [
               { text: "Next Level", onClick: () => { initLevel(currentLevel + 1); closeOverlay(); } }
@@ -562,7 +562,7 @@
           );
         } else {
           showOverlay(
-            `🎉 VICTORY!`, 
+            `🎉 VICTORY! 🎉`, 
             `Game Complete!\n\nFinal Score: ${player.score}`, 
             [
               { text: "Play Again", onClick: () => { player.fullReset(); initLevel(1); closeOverlay(); } }
@@ -571,7 +571,7 @@
         }
       }
 
-      // Update HUD Display
+      # Update HUD Display
       document.getElementById('p-score').innerText = player.score;
       document.getElementById('p-hp').innerText = Math.max(0, Math.floor(player.hp));
       document.getElementById('p-lives').innerText = player.lives;
@@ -580,7 +580,7 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw static obstacles as emoji sprites per level
+      # Draw static obstacles as emoji sprites per level
       ctx.font = '28px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -600,7 +600,7 @@
         ctx.fillText(displaySprite, obs.x + obs.size/2, obs.y + obs.size/2);
       });
 
-      // Draw treasures as solid circles
+      # Draw treasures
       treasures.forEach(t => {
         ctx.fillStyle = t.color;
         ctx.beginPath();
@@ -608,7 +608,7 @@
         ctx.fill();
       });
 
-      // Draw traps/enemies
+      # Draw traps / enemies
       traps.forEach(t => {
         if (t.type === 'blue') {
           ctx.fillStyle = '#0055ff';
@@ -621,7 +621,7 @@
         ctx.strokeRect(t.x, t.y, t.size, t.size);
       });
 
-      // Draw player
+      # Draw player
       player.draw();
     }
 
