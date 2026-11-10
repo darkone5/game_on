@@ -381,27 +381,9 @@
 
     function checkShapeCollision(x, y, w, h) {
       for (let obs of staticObstacles) {
-        if (obs.type === 'rect') {
-          if (x < obs.x + obs.size && x + w > obs.x &&
-              y < obs.y + obs.size && y + h > obs.y) {
-            return true;
-          }
-        } else if (obs.type === 'circle') {
-          const cX = obs.x + obs.size/2;
-          const cY = obs.y + obs.size/2;
-          const cRadius = obs.size/2;
-          const closestX = Math.max(x, Math.min(cX, x + w));
-          const closestY = Math.max(y, Math.min(cY, y + h));
-          const dx = cX - closestX;
-          const dy = cY - closestY;
-          if ((dx * dx + dy * dy) < (cRadius * cRadius)) {
-            return true;
-          }
-        } else if (obs.type === 'triangle') {
-          if (x < obs.x + obs.size && x + w > obs.x &&
-              y < obs.y + obs.size && y + h > obs.y) {
-            return true;
-          }
+        if (x < obs.x + obs.size && x + w > obs.x &&
+            y < obs.y + obs.size && y + h > obs.y) {
+          return true;
         }
       }
       return false;
@@ -412,15 +394,15 @@
       document.getElementById('level-display').innerText = currentLevel;
       player.resetPos();
 
-      // Update background and border colors per level
+      // Update background and border colors per level (Level 2 colors swapped as requested)
       if (lvl === 1) {
-        canvas.style.backgroundColor = '#5c4033'; // Brown
+        canvas.style.backgroundColor = '#5c4033'; // Brown background
         canvas.style.border = '4px solid #2e8b57'; // Green border
       } else if (lvl === 2) {
-        canvas.style.backgroundColor = '#ffeb3b'; // Bright yellow
-        canvas.style.border = '4px solid #fbc02d'; // Darker yellow border
+        canvas.style.backgroundColor = '#fbc02d'; // Darker yellow background
+        canvas.style.border = '4px solid #ffeb3b'; // Bright yellow border
       } else if (lvl === 3) {
-        canvas.style.backgroundColor = '#b3e5fc'; // Baby blue
+        canvas.style.backgroundColor = '#b3e5fc'; // Baby blue background
         canvas.style.border = '4px solid #0288d1'; // Darker blue border
       }
 
@@ -430,16 +412,13 @@
       if (lvl === 2) obstacleCount = 15;
       if (lvl === 3) obstacleCount = 25;
 
-      const shapes = ['rect', 'circle', 'triangle'];
-
       for (let i = 0; i < obstacleCount; i++) {
-        let obsX, obsY, obsSize, shape;
+        let obsX, obsY, obsSize;
         let attempts = 0;
         let valid = false;
 
         do {
-          shape = shapes[Math.floor(Math.random() * shapes.length)];
-          obsSize = Math.random() * 35 + 25;
+          obsSize = 32; // Fixed sizing for clean emoji sprites
           obsX = Math.random() * (canvas.width - 100) + 50;
           obsY = Math.random() * (canvas.height - 100) + 50;
 
@@ -455,7 +434,6 @@
         } while (!valid);
 
         staticObstacles.push({
-          type: shape,
           x: obsX,
           y: obsY,
           size: obsSize
@@ -639,29 +617,17 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw static obstacles
-      staticObstacles.forEach(obs => {
-        ctx.fillStyle = '#555555';
-        ctx.strokeStyle = '#777777';
-        ctx.lineWidth = 2;
+      // Draw static obstacles as emoji sprites per level
+      ctx.font = '28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
 
-        if (obs.type === 'rect') {
-          ctx.fillRect(obs.x, obs.y, obs.size, obs.size);
-          ctx.strokeRect(obs.x, obs.y, obs.size, obs.size);
-        } else if (obs.type === 'circle') {
-          ctx.beginPath();
-          ctx.arc(obs.x + obs.size/2, obs.y + obs.size/2, obs.size/2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-        } else if (obs.type === 'triangle') {
-          ctx.beginPath();
-          ctx.moveTo(obs.x + obs.size/2, obs.y);
-          ctx.lineTo(obs.x + obs.size, obs.y + obs.size);
-          ctx.lineTo(obs.x, obs.y + obs.size);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-        }
+      staticObstacles.forEach(obs => {
+        let sprite = '🌲'; // Level 1: Tree
+        if (currentLevel === 2) sprite = '🔺'; // Level 2: Pyramid
+        if (currentLevel === 3) sprite = '🧊'; // Level 3: Ice cube
+
+        ctx.fillText(sprite, obs.x + obs.size/2, obs.y + obs.size/2);
       });
 
       // Draw treasures
