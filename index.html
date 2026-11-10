@@ -46,8 +46,8 @@
       height: 650px;
     }
     canvas {
-      border: 4px solid #2e8b57; /* Initial Level 1 Border */
-      background-color: #5c4033; /* Initial Level 1 Background */
+      border: 4px solid #2e8b57;
+      background-color: #5c4033;
       box-shadow: 0 10px 20px rgba(0,0,0,0.5);
     }
     /* In-Game Menu Overlay */
@@ -85,22 +85,6 @@
       text-align: center;
       white-space: pre-line;
       line-height: 1.5;
-    }
-    .volume-container {
-      margin-bottom: 25px;
-      text-align: center;
-      display: none;
-    }
-    .volume-container label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 16px;
-      color: #ddd;
-    }
-    .volume-slider {
-      width: 220px;
-      accent-color: #ffd700;
-      cursor: pointer;
     }
     .btn-group {
       display: flex;
@@ -157,12 +141,6 @@
     <div id="gameOverlay" class="overlay hidden">
       <div id="overlayTitle" class="overlay-title">Level Cleared!</div>
       <div id="overlayMessage" class="overlay-message">Get ready for the next level.</div>
-      
-      <!-- Volume Slider Control -->
-      <div id="volumeControlContainer" class="volume-container">
-        <label for="volumeSlider">Volume: <span id="volDisplay">100</span>%</label>
-        <input type="range" id="volumeSlider" class="volume-slider" min="0" max="200" value="100" oninput="updateVolume(this.value)">
-      </div>
 
       <div id="overlayBtnContainer" class="btn-group">
         <button id="overlayBtn" class="overlay-btn" onclick="closeOverlay()">Continue</button>
@@ -178,17 +156,10 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Audio Setup & Master Volume
-    let masterVolume = 1.0;
+    // Audio Setup
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    function updateVolume(val) {
-      masterVolume = val / 100;
-      document.getElementById('volDisplay').innerText = val;
-    }
-
     function playSound(freq, duration) {
-      if (masterVolume <= 0) return;
       if (audioCtx.state === 'suspended') audioCtx.resume();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
@@ -196,7 +167,7 @@
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       
-      gain.gain.setValueAtTime(masterVolume, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
       osc.start();
       gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
       osc.stop(audioCtx.currentTime + duration);
@@ -232,12 +203,10 @@
     let pendingAction = null;
 
     // Overlay Management
-    function showOverlay(title, message, buttonsConfig, showVolume = false) {
+    function showOverlay(title, message, buttonsConfig) {
       isPaused = true;
       document.getElementById('overlayTitle').innerText = title;
       document.getElementById('overlayMessage').innerText = message;
-      
-      document.getElementById('volumeControlContainer').style.display = showVolume ? 'block' : 'none';
 
       const btnContainer = document.getElementById('overlayBtnContainer');
       btnContainer.innerHTML = ''; 
@@ -289,8 +258,7 @@
                 initLevel(1);
               } 
             }
-          ],
-          true 
+          ]
         );
       }
     }
@@ -396,14 +364,14 @@
 
       // Update background and border colors per level
       if (lvl === 1) {
-        canvas.style.backgroundColor = '#5c4033'; // Brown background
-        canvas.style.border = '4px solid #2e8b57'; // Green border
+        canvas.style.backgroundColor = '#5c4033'; 
+        canvas.style.border = '4px solid #2e8b57'; 
       } else if (lvl === 2) {
-        canvas.style.backgroundColor = '#d4ac0d'; // Darker yellow background
-        canvas.style.border = '4px solid #ffeb3b'; // Bright yellow border
+        canvas.style.backgroundColor = '#d4ac0d'; 
+        canvas.style.border = '4px solid #ffeb3b'; 
       } else if (lvl === 3) {
-        canvas.style.backgroundColor = '#b3e5fc'; // Baby blue background
-        canvas.style.border = '4px solid #0288d1'; // Darker blue border
+        canvas.style.backgroundColor = '#b3e5fc'; 
+        canvas.style.border = '4px solid #0288d1'; 
       }
 
       // Static obstacles: Level 1 = 5, Level 2 = 15, Level 3 = 25
@@ -439,7 +407,7 @@
         });
       }
 
-      // Generate treasures (solid colors without borders)
+      // Generate treasures (solid colors)
       treasures = [];
       const treasureCount = 10 + (lvl - 1) * 10; 
 
@@ -541,8 +509,7 @@
           `Remaining Lives: ${player.lives}`, 
           [
             { text: "Continue", onClick: () => { player.hp = 100; player.resetPos(); closeOverlay(); } }
-          ],
-          false
+          ]
         );
       } else {
         showOverlay(
@@ -550,8 +517,7 @@
           "All 3 lives lost. Resetting game back to Level 1.", 
           [
             { text: "Try Again", onClick: () => { player.fullReset(); initLevel(1); closeOverlay(); } }
-          ],
-          false
+          ]
         );
       }
     }
@@ -592,8 +558,7 @@
             `Advancing to Level ${currentLevel + 1}...`, 
             [
               { text: "Next Level", onClick: () => { initLevel(currentLevel + 1); closeOverlay(); } }
-            ],
-            false
+            ]
           );
         } else {
           showOverlay(
@@ -601,8 +566,7 @@
             `Game Complete!\n\nFinal Score: ${player.score}`, 
             [
               { text: "Play Again", onClick: () => { player.fullReset(); initLevel(1); closeOverlay(); } }
-            ],
-            false
+            ]
           );
         }
       }
@@ -622,13 +586,12 @@
       ctx.textBaseline = 'middle';
 
       staticObstacles.forEach(obs => {
-        let sprite = '🌲'; // Level 1: Tree
-        if (currentLevel === 2) sprite = '🟡'; // Level 2: Yellow Pyramid / Marker emoji substitute (or 🔶)
-        if (currentLevel === 3) sprite = '🧊'; // Level 3: Ice cube
+        let sprite = '🌲'; 
+        if (currentLevel === 2) sprite = '🔺'; 
+        if (currentLevel === 3) sprite = '🧊'; 
 
-        // If level 2, override with a bright yellow pyramid/triangle look via text/color or use yellow-toned emoji
         if (currentLevel === 2) {
-          ctx.fillStyle = '#f1c40f'; // Solid yellow color tinting for Level 2 pyramids
+          ctx.fillStyle = '#f1c40f'; 
         } else {
           ctx.fillStyle = '#ffffff';
         }
@@ -637,7 +600,7 @@
         ctx.fillText(displaySprite, obs.x + obs.size/2, obs.y + obs.size/2);
       });
 
-      // Draw treasures as solid colored circles (no border strokes)
+      // Draw treasures as solid circles
       treasures.forEach(t => {
         ctx.fillStyle = t.color;
         ctx.beginPath();
