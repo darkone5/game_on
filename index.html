@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2-Player Treasure Hunt</title>
+  <style>
+    body {
+      background-color: #1a1a1a;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 { margin-bottom: 5px; color: #ffd700; }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 1000px;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .p1-color { color: #00d2ff; }
+    .p2-color { color: #00ff88; }
+    .pause-btn {
+      background: #444;
+      color: #ffd700;
+      border: 2px solid #ffd700;
+      padding: 6px 14px;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .pause-btn:hover {
+      background: #555;
+    }
+    .game-container {
+      position: relative;
+      width: 1000px;
+      height: 650px;
+    }
+    canvas {
+      border: 4px solid #444;
+      background-color: #2b261f;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    }
+    /* In-Game Menu Overlay */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1000px;
+      height: 650px;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(5px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 4px solid #444;
+      box-sizing: border-box;
+      z-index: 10;
+    }
+    .overlay.hidden {
+      display: none;
+    }
+    .overlay-title {
+      font-size: 36px;
+      font-weight: bold;
+      color: #ffd700;
+      margin-bottom: 15px;
+      text-align: center;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.8);
+    }
+    .overlay-message {
+      font-size: 20px;
+      color: #eee;
+      margin-bottom: 25px;
+      text-align: center;
+      white-space: pre-line;
+      line-height: 1.5;
+    }
+    .volume-container {
+      margin-bottom: 25px;
+      text-align: center;
+      display: none;
+    }
+    .volume-container label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 16px;
+      color: #ddd;
+    }
+    .volume-slider {
+      width: 220px;
+      accent-color: #ffd700;
+      cursor: pointer;
+    }
+    .btn-group {
+      display: flex;
+      gap: 15px;
+    }
+    .overlay-btn {
+      background: #ffd700;
+      color: #1a1a1a;
+      border: none;
+      padding: 12px 25px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      transition: transform 0.1s, background-color 0.2s;
+    }
+    .overlay-btn:hover {
+      background: #ffae00;
+      transform: scale(1.05);
+    }
+    .overlay-btn.secondary {
+      background: #555;
+      color: #fff;
+    }
+    .overlay-btn.secondary:hover {
+      background: #666;
+    }
+    .controls {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🏴‍☠️ 2-Player Treasure Hunt</h1>
+  
+  <div class="hud">
+    <div class="p1-color">
+      Player 1 (WASD)<br>
+      Score: <span id="p1-score">0</span> | HP: <span id="p1-hp">100</span> | Lives: <span id="p1-lives">3</span>
+    </div>
+    <div>Level: <span id="level-display">1</span> / 3</div>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <div class="p2-color" style="text-align: right;">
+        Player 2 (Arrows)<br>
+        Score: <span id="p2-score">0</span> | HP: <span id="p2-hp">100</span> | Lives: <span id="p2-lives">3</span>
+      </div>
+      <button class="pause-btn" onclick="togglePauseMenu()">⏸ Pause (Esc)</button>
+    </div>
+  </div>
+
+  <div class="game-container">
+    <canvas id="gameCanvas" width="1000" height="650"></canvas>
+    
+    <!-- Modal Menu -->
+    <div id="gameOverlay" class="overlay hidden">
+      <div id="overlayTitle" class="overlay-title">Level Cleared!</div>
+      <div id="overlayMessage" class="overlay-message">Get ready for the next level.</div>
+      
+      <!-- Volume Slider Control -->
+      <div id="volumeControlContainer" class="volume-container">
+        <label for="volumeSlider">Volume: <span id="volDisplay">100</span>%</label>
+        <input type="range" id="volumeSlider" class="volume-slider" min="0" max="200" value="100" oninput="updateVolume(this.value)">
+      </div>
+
+      <div id="overlayBtnContainer" class="btn-group">
+        <button id="overlayBtn" class="overlay-btn" onclick="closeOverlay()">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    P1: <b>W, A, S, D</b> to move | P2: <b>Arrow Keys</b> to move | <b>ESC</b> to Pause | <b>Enter</b> to confirm menu
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Audio Setup & Master Volume
+    let masterVolume = 1.0;
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function updateVolume(val) {
+      masterVolume = val / 100;
+      document.getElementById('volDisplay').innerText = val;
+    }
+
+    function playSound(freq, duration) {
+      if (masterVolume <= 0) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      gain.gain.setValueAtTime(masterVolume, audioCtx.currentTime);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Input state
+    const keys = {};
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      if (e.key === 'Escape') {
+        togglePauseMenu();
+      }
+      
+      if (e.key === 'Enter') {
+        const overlay = document.getElementById('gameOverlay');
+        if (!overlay.classList.contains('hidden')) {
+          const primaryBtn = overlay.querySelector('.overlay-btn');
+          if (primaryBtn) {
+            primaryBtn.click();
+          }
+        }
+      }
+    });
+    window.addEventListener('keyup', e => keys[e.key] = false);
+
+    // Game state variables
+    let currentLevel = 1;
+    let treasures = [];
+    let traps = [];
+    let staticObstacles = [];
+    let isPaused = false;
+    let isManualPause = false;
+    let pendingAction = null;
+
+    // Overlay Management
+    function showOverlay(title, message, buttonsConfig, showVolume = false) {
+      isPaused = true;
+      document.getElementById('overlayTitle').innerText = title;
+      document.getElementById('overlayMessage').innerText = message;
+      
+      document.getElementById('volumeControlContainer').style.display = showVolume ? 'block' : 'none';
+
+      const btnContainer = document.getElementById('overlayBtnContainer');
+      btnContainer.innerHTML = ''; 
+
+      buttonsConfig.forEach(btnInfo => {
+        const btn = document.createElement('button');
+        btn.innerText = btnInfo.text;
+        btn.className = `overlay-btn ${btnInfo.class || ''}`;
+        btn.onclick = btnInfo.onClick;
+        btnContainer.appendChild(btn);
+      });
+
+      document.getElementById('gameOverlay').classList.remove('hidden');
+    }
+
+    function closeOverlay() {
+      document.getElementById('gameOverlay').classList.add('hidden');
+      isPaused = false;
+      isManualPause = false;
+      if (pendingAction) {
+        const action = pendingAction;
+        pendingAction = null;
+        action();
+      }
+    }
+
+    function togglePauseMenu() {
+      const overlay = document.getElementById('gameOverlay');
+      if (!overlay.classList.contains('hidden') && !isManualPause) {
+        return; 
+      }
+
+      if (isPaused && isManualPause) {
+        closeOverlay();
+      } else if (!isPaused) {
+        isPaused = true;
+        isManualPause = true;
+        showOverlay(
+          "⏸ Game Paused",
+          `Current Level: ${currentLevel}`,
+          [
+            { text: "Resume", class: "", onClick: () => closeOverlay() },
+            { 
+              text: "Restart from Level 1", 
+              class: "secondary", 
+              onClick: () => {
+                closeOverlay();
+                p1.fullReset();
+                p2.fullReset();
+                initLevel(1);
+              } 
+            }
+          ],
+          true 
+        );
+      }
+    }
+
+    // Player class
+    class Player {
+      constructor(x, y, color, controls) {
+        this.startX = x;
+        this.startY = y;
+        this.x = x;
+        this.y = y;
+        this.size = 26;
+        this.color = color;
+        this.speed = 4.5;
+        this.score = 0;
+        this.hp = 100;
+        this.lives = 3;
+        this.controls = controls;
+        this.isProtected = true; 
+      }
+
+      resetPos() {
+        this.x = this.startX;
+        this.y = this.startY;
+        this.isProtected = true; 
+      }
+
+      fullReset() {
+        this.score = 0;
+        this.hp = 100;
+        this.lives = 3;
+        this.resetPos();
+      }
+
+      update() {
+        if (isPaused) return;
+
+        let dx = 0;
+        let dy = 0;
+        let isMoving = false;
+
+        if (keys[this.controls.up]) { dy -= this.speed; isMoving = true; }
+        if (keys[this.controls.down]) { dy += this.speed; isMoving = true; }
+        if (keys[this.controls.left]) { dx -= this.speed; isMoving = true; }
+        if (keys[this.controls.right]) { dx += this.speed; isMoving = true; }
+
+        if (isMoving) {
+          this.isProtected = false;
+        }
+
+        if (dx !== 0 || dy !== 0) {
+          this.x += dx;
+          if (this.x < 0 || this.x > canvas.width - this.size || checkShapeCollision(this.x, this.y, this.size, this.size)) {
+            this.x -= dx;
+          }
+
+          this.y += dy;
+          if (this.y < 0 || this.y > canvas.height - this.size || checkShapeCollision(this.x, this.y, this.size, this.size)) {
+            this.y -= dy;
+          }
+        }
+      }
+
+      draw() {
+        if (this.isProtected && Math.floor(Date.now() / 150) % 2 === 0) {
+          ctx.fillStyle = '#ffffff'; 
+        } else {
+          ctx.fillStyle = this.color;
+        }
+
+        ctx.beginPath();
+        ctx.arc(this.x + this.size/2, this.y + this.size/2, this.size/2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+
+        if (this.isProtected) {
+          ctx.strokeStyle = '#00ffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(this.x + this.size/2, this.y + this.size/2, this.size/2 + 4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+    }
+
+    const p1 = new Player(100, 312, '#00d2ff', { up: 'w', down: 's', left: 'a', right: 'd' });
+    const p2 = new Player(870, 312, '#00ff88', { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' });
+
+    function checkShapeCollision(x, y, w, h) {
+      for (let obs of staticObstacles) {
+        if (obs.type === 'rect') {
+          if (x < obs.x + obs.size && x + w > obs.x &&
+              y < obs.y + obs.size && y + h > obs.y) {
+            return true;
+          }
+        } else if (obs.type === 'circle') {
+          const cX = obs.x + obs.size/2;
+          const cY = obs.y + obs.size/2;
+          const cRadius = obs.size/2;
+          const closestX = Math.max(x, Math.min(cX, x + w));
+          const closestY = Math.max(y, Math.min(cY, y + h));
+          const dx = cX - closestX;
+          const dy = cY - closestY;
+          if ((dx * dx + dy * dy) < (cRadius * cRadius)) {
+            return true;
+          }
+        } else if (obs.type === 'triangle') {
+          if (x < obs.x + obs.size && x + w > obs.x &&
+              y < obs.y + obs.size && y + h > obs.y) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function initLevel(lvl) {
+      currentLevel = lvl;
+      document.getElementById('level-display').innerText = currentLevel;
+      p1.resetPos();
+      p2.resetPos();
+
+      // Static obstacles
+      staticObstacles = [];
+      const obstacleCount = 3 + lvl * 2;
+      const shapes = ['rect', 'circle', 'triangle'];
+
+      for (let i = 0; i < obstacleCount; i++) {
+        let obsX, obsY, obsSize, shape, overlapping;
+        let attempts = 0;
+        do {
+          shape = shapes[Math.floor(Math.random() * shapes.length)];
+          obsSize = Math.random() * 30 + 25;
+          obsX = Math.random() * (canvas.width - 150) + 75;
+          obsY = Math.random() * (canvas.height - 150) + 50;
+
+          const p1Buffer = (obsX < 100 + 60 && obsX + obsSize > 100 - 60 && obsY < 312 + 60 && obsY + obsSize > 312 - 60);
+          const p2Buffer = (obsX < 870 + 60 && obsX + obsSize > 870 - 60 && obsY < 312 + 60 && obsY + obsSize > 312 - 60);
+
+          overlapping = p1Buffer || p2Buffer;
+          attempts++;
+          if (attempts > 500) break;
+        } while (overlapping);
+
+        staticObstacles.push({
+          type: shape,
+          x: obsX,
+          y: obsY,
+          size: obsSize
+        });
+      }
+
+      // Generate varied treasures with level-dependent coin gating (+10 coins per level)
+      treasures = [];
+      const treasureCount = 10 + (lvl - 1) * 10; 
+
+      for (let i = 0; i < treasureCount; i++) {
+        let tX, tY, overlapping;
+        let attempts = 0;
+
+        const rand = Math.random();
+        let tColor, tPoints, tRadius;
+
+        if (lvl === 1) {
+          // Level 1: Only Bronze (60%) and Silver (40%)
+          if (rand < 0.60) {
+            tColor = '#cd7f32'; tPoints = 10; tRadius = 8;  // Bronze
+          } else {
+            tColor = '#c0c0c0'; tPoints = 20; tRadius = 9;  // Silver
+          }
+        } else if (lvl === 2) {
+          // Level 2: Bronze (50%), Silver (30%), Gold (20%)
+          if (rand < 0.50) {
+            tColor = '#cd7f32'; tPoints = 10; tRadius = 8;  // Bronze
+          } else if (rand < 0.80) {
+            tColor = '#c0c0c0'; tPoints = 20; tRadius = 9;  // Silver
+          } else {
+            tColor = '#ffd700'; tPoints = 35; tRadius = 10; // Gold
+          }
+        } else {
+          // Level 3: All types unlocked (Bronze, Silver, Gold, Diamond)
+          if (rand < 0.50) {
+            tColor = '#cd7f32'; tPoints = 10; tRadius = 8;  // Bronze
+          } else if (rand < 0.75) {
+            tColor = '#c0c0c0'; tPoints = 20; tRadius = 9;  // Silver
+          } else if (rand < 0.90) {
+            tColor = '#ffd700'; tPoints = 35; tRadius = 10; // Gold
+          } else {
+            tColor = '#b9f2ff'; tPoints = 50; tRadius = 12; // Diamond
+          }
+        }
+
+        do {
+          tX = Math.random() * (canvas.width - 60) + 30;
+          tY = Math.random() * (canvas.height - 60) + 30;
+          overlapping = checkShapeCollision(tX - tRadius, tY - tRadius, tRadius * 2, tRadius * 2);
+          attempts++;
+          if (attempts > 500) break; 
+        } while (overlapping);
+
+        treasures.push({
+          x: tX,
+          y: tY,
+          radius: tRadius,
+          points: tPoints,
+          color: tColor
+        });
+      }
+
+      // Moving Traps
+      traps = [];
+      if (lvl === 2) {
+        for (let i = 0; i < 4; i++) {
+          traps.push({
+            x: Math.random() * (canvas.width - 80) + 40,
+            y: Math.random() * (canvas.height - 80) + 40,
+            vx: (Math.random() - 0.5) * 3,
+            vy: (Math.random() - 0.5) * 3,
+            size: 20
+          });
+        }
+      } else if (lvl === 3) {
+        for (let i = 0; i < 8; i++) {
+          traps.push({
+            x: Math.random() * (canvas.width - 80) + 40,
+            y: Math.random() * (canvas.height - 80) + 40,
+            vx: (Math.random() - 0.5) * 4.5,
+            vy: (Math.random() - 0.5) * 4.5,
+            size: 22
+          });
+        }
+      }
+    }
+
+    function checkCollision(circle1, circle2) {
+      const dx = (circle1.x + (circle1.size ? circle1.size/2 : 0)) - circle2.x;
+      const dy = (circle1.y + (circle1.size ? circle1.size/2 : 0)) - circle2.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const r1 = circle1.size ? circle1.size/2 : circle1.radius;
+      const r2 = circle2.size ? circle2.size/2 : circle2.radius;
+      return distance < (r1 + r2);
+    }
+
+    function handlePlayerDeath(player, name) {
+      player.lives--;
+      playSound(100, 0.1);
+      if (player.lives > 0) {
+        showOverlay(
+          `⚠️ ${name} Lost a Life!`, 
+          `Remaining Lives: ${player.lives}`, 
+          [
+            { text: "Continue", onClick: () => { player.hp = 100; player.resetPos(); closeOverlay(); } }
+          ],
+          false
+        );
+      } else {
+        showOverlay(
+          `❌ Game Over for ${name}!`, 
+          "All 3 lives lost. Resetting game back to Level 1.", 
+          [
+            { text: "Try Again", onClick: () => { p1.fullReset(); p2.fullReset(); initLevel(1); closeOverlay(); } }
+          ],
+          false
+        );
+      }
+    }
+
+    function update() {
+      if (isPaused) return;
+
+      p1.update();
+      p2.update();
+
+      // Moving traps updates
+      traps.forEach(trap => {
+        trap.x += trap.vx;
+        trap.y += trap.vy;
+        if (trap.x < 0 || trap.x > canvas.width - trap.size) trap.vx *= -1;
+        if (trap.y < 0 || trap.y > canvas.height - trap.size) trap.vy *= -1;
+
+        if (!p1.isProtected && checkCollision(p1, {x: trap.x + trap.size/2, y: trap.y + trap.size/2, radius: trap.size/2})) {
+          p1.hp -= 2;
+          playSound(130, 0.05);
+          if (p1.hp <= 0) handlePlayerDeath(p1, "Player 1");
+        }
+        if (!p2.isProtected && checkCollision(p2, {x: trap.x + trap.size/2, y: trap.y + trap.size/2, radius: trap.size/2})) {
+          p2.hp -= 2;
+          playSound(130, 0.05);
+          if (p2.hp <= 0) handlePlayerDeath(p2, "Player 2");
+        }
+      });
+
+      // Treasure collection
+      treasures.forEach((t, index) => {
+        if (checkCollision(p1, t)) {
+          p1.score += t.points;
+          playSound(500 + t.points * 4, 0.08);
+          treasures.splice(index, 1);
+        } else if (checkCollision(p2, t)) {
+          p2.score += t.points;
+          playSound(500 + t.points * 4, 0.08);
+          treasures.splice(index, 1);
+        }
+      });
+
+      // Level progression
+      if (treasures.length === 0) {
+        if (currentLevel < 3) {
+          showOverlay(
+            `🏆 Level ${currentLevel} Cleared!`, 
+            `Advancing to Level ${currentLevel + 1}...`, 
+            [
+              { text: "Next Level", onClick: () => { initLevel(currentLevel + 1); closeOverlay(); } }
+            ],
+            false
+          );
+        } else {
+          showOverlay(
+            `🎉 VICTORY!`, 
+            `Game Complete!\n\nFinal Scores:\nPlayer 1: ${p1.score}\nPlayer 2: ${p2.score}`, 
+            [
+              { text: "Play Again", onClick: () => { p1.fullReset(); p2.fullReset(); initLevel(1); closeOverlay(); } }
+            ],
+            false
+          );
+        }
+      }
+
+      // Update HUD Display
+      document.getElementById('p1-score').innerText = p1.score;
+      document.getElementById('p1-hp').innerText = Math.max(0, Math.floor(p1.hp));
+      document.getElementById('p1-lives').innerText = p1.lives;
+      
+      document.getElementById('p2-score').innerText = p2.score;
+      document.getElementById('p2-hp').innerText = Math.max(0, Math.floor(p2.hp));
+      document.getElementById('p2-lives').innerText = p2.lives;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw static obstacles
+      staticObstacles.forEach(obs => {
+        ctx.fillStyle = '#555555';
+        ctx.strokeStyle = '#777777';
+        ctx.lineWidth = 2;
+
+        if (obs.type === 'rect') {
+          ctx.fillRect(obs.x, obs.y, obs.size, obs.size);
+          ctx.strokeRect(obs.x, obs.y, obs.size, obs.size);
+        } else if (obs.type === 'circle') {
+          ctx.beginPath();
+          ctx.arc(obs.x + obs.size/2, obs.y + obs.size/2, obs.size/2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        } else if (obs.type === 'triangle') {
+          ctx.beginPath();
+          ctx.moveTo(obs.x + obs.size/2, obs.y);
+          ctx.lineTo(obs.x + obs.size, obs.y + obs.size);
+          ctx.lineTo(obs.x, obs.y + obs.size);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      });
+
+      // Draw treasures
+      treasures.forEach(t => {
+        ctx.fillStyle = t.color;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, t.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+
+      // Draw traps
+      traps.forEach(t => {
+        ctx.fillStyle = '#ff3333';
+        ctx.fillRect(t.x, t.y, t.size, t.size);
+        ctx.strokeStyle = '#990000';
+        ctx.strokeRect(t.x, t.y, t.size, t.size);
+      });
+
+      // Draw players
+      p1.draw();
+      p2.draw();
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    initLevel(1);
+    gameLoop();
+  </script>
+</body>
+</html>
