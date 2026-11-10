@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2-Player Treasure Hunt</title>
+  <title>1-Player Treasure Hunt</title>
   <style>
     body {
       background-color: #1a1a1a;
@@ -25,8 +25,7 @@
       margin-bottom: 10px;
       font-weight: bold;
     }
-    .p1-color { color: #00d2ff; }
-    .p2-color { color: #00ff88; }
+    .player-color { color: #00d2ff; }
     .pause-btn {
       background: #444;
       color: #ffd700;
@@ -139,19 +138,14 @@
 </head>
 <body>
 
-  <h1>🏴‍☠️ 2-Player Treasure Hunt</h1>
+  <h1>🏴‍☠️ Treasure Hunt - Solo Adventure</h1>
   
   <div class="hud">
-    <div class="p1-color">
-      Player 1 (WASD)<br>
-      Score: <span id="p1-score">0</span> | HP: <span id="p1-hp">100</span> | Lives: <span id="p1-lives">3</span>
+    <div class="player-color">
+      Score: <span id="p-score">0</span> | HP: <span id="p-hp">100</span> | Lives: <span id="p-lives">3</span>
     </div>
     <div>Level: <span id="level-display">1</span> / 3</div>
-    <div style="display: flex; align-items: center; gap: 20px;">
-      <div class="p2-color" style="text-align: right;">
-        Player 2 (Arrows)<br>
-        Score: <span id="p2-score">0</span> | HP: <span id="p2-hp">100</span> | Lives: <span id="p2-lives">3</span>
-      </div>
+    <div>
       <button class="pause-btn" onclick="togglePauseMenu()">⏸ Pause (Esc)</button>
     </div>
   </div>
@@ -177,7 +171,7 @@
   </div>
 
   <div class="controls">
-    P1: <b>W, A, S, D</b> to move | P2: <b>Arrow Keys</b> to move | <b>ESC</b> to Pause | <b>Enter</b> to confirm menu
+    Controls: <b>W, A, S, D</b> or <b>Arrow Keys</b> to move | <b>ESC</b> to Pause | <b>Enter</b> to confirm menu
   </div>
 
   <script>
@@ -291,8 +285,7 @@
               class: "secondary", 
               onClick: () => {
                 closeOverlay();
-                p1.fullReset();
-                p2.fullReset();
+                player.fullReset();
                 initLevel(1);
               } 
             }
@@ -302,20 +295,19 @@
       }
     }
 
-    // Player class
+    // Player class (Spawns in center: width/2 - size/2, height/2 - size/2)
     class Player {
-      constructor(x, y, color, controls) {
-        this.startX = x;
-        this.startY = y;
-        this.x = x;
-        this.y = y;
+      constructor() {
         this.size = 26;
-        this.color = color;
+        this.startX = (canvas.width / 2) - (this.size / 2);
+        this.startY = (canvas.height / 2) - (this.size / 2);
+        this.x = this.startX;
+        this.y = this.startY;
+        this.color = '#00d2ff';
         this.speed = 4.5;
         this.score = 0;
         this.hp = 100;
         this.lives = 3;
-        this.controls = controls;
         this.isProtected = true; 
       }
 
@@ -339,10 +331,10 @@
         let dy = 0;
         let isMoving = false;
 
-        if (keys[this.controls.up]) { dy -= this.speed; isMoving = true; }
-        if (keys[this.controls.down]) { dy += this.speed; isMoving = true; }
-        if (keys[this.controls.left]) { dx -= this.speed; isMoving = true; }
-        if (keys[this.controls.right]) { dx += this.speed; isMoving = true; }
+        if (keys['w'] || keys['W'] || keys['ArrowUp']) { dy -= this.speed; isMoving = true; }
+        if (keys['s'] || keys['S'] || keys['ArrowDown']) { dy += this.speed; isMoving = true; }
+        if (keys['a'] || keys['A'] || keys['ArrowLeft']) { dx -= this.speed; isMoving = true; }
+        if (keys['d'] || keys['D'] || keys['ArrowRight']) { dx += this.speed; isMoving = true; }
 
         if (isMoving) {
           this.isProtected = false;
@@ -385,8 +377,7 @@
       }
     }
 
-    const p1 = new Player(100, 312, '#00d2ff', { up: 'w', down: 's', left: 'a', right: 'd' });
-    const p2 = new Player(870, 312, '#00ff88', { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' });
+    const player = new Player();
 
     function checkShapeCollision(x, y, w, h) {
       for (let obs of staticObstacles) {
@@ -419,10 +410,9 @@
     function initLevel(lvl) {
       currentLevel = lvl;
       document.getElementById('level-display').innerText = currentLevel;
-      p1.resetPos();
-      p2.resetPos();
+      player.resetPos();
 
-      // Static obstacles
+      // Static obstacles (ensuring center spawn zone is clear)
       staticObstacles = [];
       const obstacleCount = 3 + lvl * 2;
       const shapes = ['rect', 'circle', 'triangle'];
@@ -436,10 +426,11 @@
           obsX = Math.random() * (canvas.width - 150) + 75;
           obsY = Math.random() * (canvas.height - 150) + 50;
 
-          const p1Buffer = (obsX < 100 + 60 && obsX + obsSize > 100 - 60 && obsY < 312 + 60 && obsY + obsSize > 312 - 60);
-          const p2Buffer = (obsX < 870 + 60 && obsX + obsSize > 870 - 60 && obsY < 312 + 60 && obsY + obsSize > 312 - 60);
+          // Keep center spawn clear of immediate obstacles
+          const centerBuffer = (obsX < player.startX + 60 && obsX + obsSize > player.startX - 60 && 
+                                obsY < player.startY + 60 && obsY + obsSize > player.startY - 60);
 
-          overlapping = p1Buffer || p2Buffer;
+          overlapping = centerBuffer;
           attempts++;
           if (attempts > 500) break;
         } while (overlapping);
@@ -452,7 +443,7 @@
         });
       }
 
-      // Generate varied treasures with level-dependent coin gating (+10 coins per level)
+      // Generate varied treasures with level-dependent coin gating
       treasures = [];
       const treasureCount = 10 + (lvl - 1) * 10; 
 
@@ -464,14 +455,12 @@
         let tColor, tPoints, tRadius;
 
         if (lvl === 1) {
-          // Level 1: Only Bronze (60%) and Silver (40%)
           if (rand < 0.60) {
             tColor = '#cd7f32'; tPoints = 10; tRadius = 8;  // Bronze
           } else {
             tColor = '#c0c0c0'; tPoints = 20; tRadius = 9;  // Silver
           }
         } else if (lvl === 2) {
-          // Level 2: Bronze (50%), Silver (30%), Gold (20%)
           if (rand < 0.50) {
             tColor = '#cd7f32'; tPoints = 10; tRadius = 8;  // Bronze
           } else if (rand < 0.80) {
@@ -480,7 +469,6 @@
             tColor = '#ffd700'; tPoints = 35; tRadius = 10; // Gold
           }
         } else {
-          // Level 3: All types unlocked (Bronze, Silver, Gold, Diamond)
           if (rand < 0.50) {
             tColor = '#cd7f32'; tPoints = 10; tRadius = 8;  // Bronze
           } else if (rand < 0.75) {
@@ -543,12 +531,12 @@
       return distance < (r1 + r2);
     }
 
-    function handlePlayerDeath(player, name) {
+    function handlePlayerDeath() {
       player.lives--;
       playSound(100, 0.1);
       if (player.lives > 0) {
         showOverlay(
-          `⚠️ ${name} Lost a Life!`, 
+          `⚠️ You Lost a Life!`, 
           `Remaining Lives: ${player.lives}`, 
           [
             { text: "Continue", onClick: () => { player.hp = 100; player.resetPos(); closeOverlay(); } }
@@ -557,10 +545,10 @@
         );
       } else {
         showOverlay(
-          `❌ Game Over for ${name}!`, 
+          `❌ Game Over!`, 
           "All 3 lives lost. Resetting game back to Level 1.", 
           [
-            { text: "Try Again", onClick: () => { p1.fullReset(); p2.fullReset(); initLevel(1); closeOverlay(); } }
+            { text: "Try Again", onClick: () => { player.fullReset(); initLevel(1); closeOverlay(); } }
           ],
           false
         );
@@ -570,8 +558,7 @@
     function update() {
       if (isPaused) return;
 
-      p1.update();
-      p2.update();
+      player.update();
 
       // Moving traps updates
       traps.forEach(trap => {
@@ -580,26 +567,17 @@
         if (trap.x < 0 || trap.x > canvas.width - trap.size) trap.vx *= -1;
         if (trap.y < 0 || trap.y > canvas.height - trap.size) trap.vy *= -1;
 
-        if (!p1.isProtected && checkCollision(p1, {x: trap.x + trap.size/2, y: trap.y + trap.size/2, radius: trap.size/2})) {
-          p1.hp -= 2;
+        if (!player.isProtected && checkCollision(player, {x: trap.x + trap.size/2, y: trap.y + trap.size/2, radius: trap.size/2})) {
+          player.hp -= 2;
           playSound(130, 0.05);
-          if (p1.hp <= 0) handlePlayerDeath(p1, "Player 1");
-        }
-        if (!p2.isProtected && checkCollision(p2, {x: trap.x + trap.size/2, y: trap.y + trap.size/2, radius: trap.size/2})) {
-          p2.hp -= 2;
-          playSound(130, 0.05);
-          if (p2.hp <= 0) handlePlayerDeath(p2, "Player 2");
+          if (player.hp <= 0) handlePlayerDeath();
         }
       });
 
       // Treasure collection
       treasures.forEach((t, index) => {
-        if (checkCollision(p1, t)) {
-          p1.score += t.points;
-          playSound(500 + t.points * 4, 0.08);
-          treasures.splice(index, 1);
-        } else if (checkCollision(p2, t)) {
-          p2.score += t.points;
+        if (checkCollision(player, t)) {
+          player.score += t.points;
           playSound(500 + t.points * 4, 0.08);
           treasures.splice(index, 1);
         }
@@ -619,9 +597,9 @@
         } else {
           showOverlay(
             `🎉 VICTORY!`, 
-            `Game Complete!\n\nFinal Scores:\nPlayer 1: ${p1.score}\nPlayer 2: ${p2.score}`, 
+            `Game Complete!\n\nFinal Score: ${player.score}`, 
             [
-              { text: "Play Again", onClick: () => { p1.fullReset(); p2.fullReset(); initLevel(1); closeOverlay(); } }
+              { text: "Play Again", onClick: () => { player.fullReset(); initLevel(1); closeOverlay(); } }
             ],
             false
           );
@@ -629,13 +607,9 @@
       }
 
       // Update HUD Display
-      document.getElementById('p1-score').innerText = p1.score;
-      document.getElementById('p1-hp').innerText = Math.max(0, Math.floor(p1.hp));
-      document.getElementById('p1-lives').innerText = p1.lives;
-      
-      document.getElementById('p2-score').innerText = p2.score;
-      document.getElementById('p2-hp').innerText = Math.max(0, Math.floor(p2.hp));
-      document.getElementById('p2-lives').innerText = p2.lives;
+      document.getElementById('p-score').innerText = player.score;
+      document.getElementById('p-hp').innerText = Math.max(0, Math.floor(player.hp));
+      document.getElementById('p-lives').innerText = player.lives;
     }
 
     function draw() {
@@ -685,9 +659,8 @@
         ctx.strokeRect(t.x, t.y, t.size, t.size);
       });
 
-      // Draw players
-      p1.draw();
-      p2.draw();
+      // Draw player
+      player.draw();
     }
 
     function gameLoop() {
