@@ -265,12 +265,11 @@
     // Player class
     class Player {
       constructor() {
-        this.size = 26;
+        this.size = 32; // Slightly enlarged to fit the emoji sprite cleanly
         this.startX = (canvas.width / 2) - (this.size / 2);
         this.startY = (canvas.height / 2) - (this.size / 2);
         this.x = this.startX;
         this.y = this.startY;
-        this.color = '#00d2ff';
         this.speed = 4.5;
         this.score = 0;
         this.hp = 100;
@@ -321,26 +320,29 @@
       }
 
       draw() {
+        ctx.save();
+        // Flashing protection effect when spawning
         if (this.isProtected && Math.floor(Date.now() / 150) % 2 === 0) {
-          ctx.fillStyle = '#ffffff'; 
-        } else {
-          ctx.fillStyle = this.color;
+          ctx.globalAlpha = 0.5;
         }
 
-        ctx.beginPath();
-        ctx.arc(this.x + this.size/2, this.y + this.size/2, this.size/2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#fff';
-        ctx.stroke();
+        ctx.font = '28px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Render Captain emoji sprite
+        ctx.fillText('👨‍✈️', this.x + this.size/2, this.y + this.size/2);
 
+        // Draw protective shield ring if active
         if (this.isProtected) {
           ctx.strokeStyle = '#00ffff';
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(this.x + this.size/2, this.y + this.size/2, this.size/2 + 4, 0, Math.PI * 2);
+          ctx.arc(this.x + this.size/2, this.y + this.size/2, this.size/1.5, 0, Math.PI * 2);
           ctx.stroke();
         }
+
+        ctx.restore();
       }
     }
 
