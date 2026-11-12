@@ -1,4 +1,6 @@
 // According to Gemini Auto at 10:56:08 PM, it says to copy all code onwards from line 155 in my index.html file to line 638, before the <html>
+console.log("Game script is connected!");
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
