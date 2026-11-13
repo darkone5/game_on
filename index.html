@@ -1,3 +1,4 @@
+<!-- HTML and CSS Setup: Styles the dark-themed UI, game container, and HUD for the Treasure Hunt game -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,7 +51,7 @@
       background-color: #5c4033;
       box-shadow: 0 10px 20px rgba(0,0,0,0.5);
     }
-    /* Full-Screen In-Game Menu Overlay */
+    /* Popup Screens & Game UI: Styles the full-screen overlay (for pause/game over menus) and main layout elements like the title, HUD, and canvas container */
     .overlay {
       position: fixed;
       top: 0;
@@ -137,8 +138,7 @@
     <canvas id="gameCanvas" width="1000" height="650"></canvas>
   </div>
 
-  <!-- Full-Screen Modal Menu Overlay -->
-  <div id="gameOverlay" class="overlay hidden">
+<!-- Game Overlays, Controls & Scripts: Sets up the popup modal, displays the keyboard instructions at the bottom, and links the main JavaScript game file -->  <div id="gameOverlay" class="overlay hidden">
     <div id="overlayTitle" class="overlay-title">Level Cleared!</div>
     <div id="overlayMessage" class="overlay-message">Get ready for the next level.</div>
 
