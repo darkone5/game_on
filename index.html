@@ -51,6 +51,7 @@
       background-color: #5c4033;
       box-shadow: 0 10px 20px rgba(0,0,0,0.5);
     }
+    /* According to Gemini Auto at 8:18:07 PM Friday 13 November 2026, it says that this code styles the full-screen overlay (used for pause menus, game-over screens, or level intros) and sets up the main HTML elements like the game title, score display, and canvas container. */
     /* Popup Screens & Game UI: Styles the full-screen overlay (for pause/game over menus) and main layout elements like the title, HUD, and canvas container */
     .overlay {
       position: fixed;
@@ -137,8 +138,9 @@
   <div class="game-container">
     <canvas id="gameCanvas" width="1000" height="650"></canvas>
   </div>
-
-<!-- Game Overlays, Controls & Scripts: Sets up the popup modal, displays the keyboard instructions at the bottom, and links the main JavaScript game file -->  <div id="gameOverlay" class="overlay hidden">
+<!-- According to Gemini Auto at 8:19:28 PM Friday 13 November 2026, it says that this code below until the end sets up the popup modal, displays the keyboard instructions at the bottom, and links the main JavaScript game file -->
+<!-- Game Overlays, Controls & Scripts: Sets up the popup modal, displays the keyboard instructions at the bottom, and links the main JavaScript game file -->  
+  <div id="gameOverlay" class="overlay hidden">
     <div id="overlayTitle" class="overlay-title">Level Cleared!</div>
     <div id="overlayMessage" class="overlay-message">Get ready for the next level.</div>
 
