@@ -1,4 +1,5 @@
 // According to Gemini Auto at 10:56:08 PM, it says to copy all code onwards from line 155 in my index.html file to line 638, before the <html>
+// According to Gemini Auto at 8:41:36 PM Friday 13 November 2026, it says that these two lines are the most important setup steps in JavaScript for any 2D canvas game. They essentially grab your drawing board and get the paintbrush ready
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -109,7 +110,8 @@ function togglePauseMenu() {
   }
 }
 
-// Player class
+// According to Gemini Auto at 8:47:45 PM Friday 13 November 2026, it says that this section defines how the player behaves, moves around the board, and appears on the screen.
+// Player class: Manages player stats, movement controls, and rendering
 class Player {
   constructor() {
     this.size = 32;
@@ -192,6 +194,8 @@ class Player {
 
 const player = new Player();
 
+// According to Gemini Auto at 8:47:45 PM Friday 13 November 2026, it says that this part handles setting up different difficulty levels, placing obstacles (like trees or rocks), scattering treasures, and spawning moving traps.
+// Level Setup & Obstacle Generation
 function checkShapeCollision(x, y, w, h) {
   for (let obs of staticObstacles) {
     if (x < obs.x + obs.size && x + w > obs.x &&
@@ -332,6 +336,8 @@ function initLevel(lvl) {
   }
 }
 
+// According to Gemini Auto 8:47:45 PM Friday 13 November 2026, it says that this part checks whether the player has bumped into a trap, collected a treasure, or cleared the level.
+// Game State Updates & Collisions
 function checkCollision(circle1, circle2) {
   const dx = (circle1.x + (circle1.size ? circle1.size/2 : 0)) - circle2.x;
   const dy = (circle1.y + (circle1.size ? circle1.size/2 : 0)) - circle2.y;
@@ -414,6 +420,8 @@ function update() {
   document.getElementById('p-lives').innerText = player.lives;
 }
 
+// According to Gemini Auto at 8:47:45 PM Friday 13 November 2026, it says that this part clears the screen each frame, redraws all game objects, and keeps the game running continuously using requestAnimationFrame.
+// Rendering and Game Loop: Draw Loop - Clears canvas and renders obstacles, treasures, traps, and the player
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
